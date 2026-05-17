@@ -142,7 +142,7 @@ void parseAndUpdateParams(String line) {
     start = end + 1;
   }
 }
-// Other unchanged utility functions (applyPID, readAngleFromChannel, getAngleDegrees, etc.) stay the same.
+
 void applyPID(AccelStepper &stepper, double speed) {
   stepper.setSpeed(fabs(speed) < 3 ? 0 : -speed);
 }
@@ -183,13 +183,13 @@ float wrapTo180(float angle) {
   return angle;
 }
 void handleSerialInput() {
-  static String inputLine;  // ✅ Déclaration ici
+  static String inputLine;  // Buffer to store incoming serial bytes
 
   while (Serial.available()) {
     char c = Serial.read();
     if (c == '\n') {
       parseAndUpdateParams(inputLine);
-      inputLine = "";  // clear après traitement
+      inputLine = "";  // Clear buffer after processing
     } else {
       inputLine += c;
     }
@@ -225,21 +225,21 @@ void computeInverseKinematics(float x, float y, float z, double q_deg[3]) {
     }
   }
 }
-// === Rotation autour de l'axe Z ===
+// === Rotation around Z Axis ===
 void rot_0Z(float angle, float R[3][3]) {
   R[0][0] = cos(angle);  R[0][1] = -sin(angle); R[0][2] = 0;
   R[1][0] = sin(angle);  R[1][1] =  cos(angle); R[1][2] = 0;
   R[2][0] = 0;           R[2][1] = 0;           R[2][2] = 1;
 }
 
-// === Appliquer la rotation à un vecteur ===
+// === Apply Rotation to Vector ===
 void applyRotation(float R[3][3], float v[3], float result[3]) {
   for (int i = 0; i < 3; i++) {
     result[i] = R[i][0]*v[0] + R[i][1]*v[1] + R[i][2]*v[2];
   }
 }
 
-// === Fonction FPK : cinématique directe pour Delta robot ===
+// === Forward Kinematics (FPK) for Delta Robot ===
 bool fpk(float th1, float th2, float th3, float P[3]) {
   const float sb = 0.41268;
   const float sp = 0.086;
@@ -253,7 +253,7 @@ bool fpk(float th1, float th2, float th3, float P[3]) {
   float wp = sp * sqrt(3.0) / 6.0;
   float up = sp * sqrt(3.0) / 3.0;
 
-  // Vecteurs des bras en position fixe
+  // Active arm vector linkages in base frame
   float e1[3] = {(wb - up) + L * cos(th1), 0, -L * sin(th1)};
   float e2[3] = {(wb - up) + L * cos(th2), 0, -L * sin(th2)};
   float e3[3] = {(wb - up) + L * cos(th3), 0, -L * sin(th3)};
